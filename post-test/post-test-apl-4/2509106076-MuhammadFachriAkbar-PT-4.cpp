@@ -30,10 +30,9 @@ User* cariUser(User* daftarUser, int jumlahUser, string nama) {
 }
 
 bool cekNama(User* daftarUser, int jumlahUser, string namaBaru) {
-    for (int i = 0; i < jumlahUser; i++) {
-        if (daftarUser[i].nama == namaBaru) {
-            return true;
-        }
+    User* hasil = cariUser(daftarUser, jumlahUser, namaBaru);
+    if (hasil != nullptr) {
+        return (*hasil).nama == namaBaru;
     }
     return false;
 }
@@ -263,8 +262,7 @@ void menuUser(User* daftarUser, int jumlahUser, int userIndex) {
         cout << "1. Lihat Profil\n";
         cout << "2. Update Nama\n";
         cout << "3. Update NIM\n";
-        cout << "4. Cari User Berdasarkan Nama\n";
-        cout << "5. Logout\n";
+        cout << "4. Logout\n";
         cout << "Pilihan : ";
         cin >> menuUser;
 
@@ -289,33 +287,13 @@ void menuUser(User* daftarUser, int jumlahUser, int userIndex) {
                 cout << "NIM berhasil diperbarui\n";
                 break;
 
-            case 4: {
-                string namaCari;
-                cin.ignore(numeric_limits<streamsize>::max(), '\n');
-                cout << "Masukkan nama yang dicari : ";
-                getline(cin, namaCari);
-
-                User* hasil = cariUser(daftarUser, jumlahUser, namaCari);
-
-                if (hasil != nullptr) {
-                    cout << "\n--- Hasil Pencarian ---\n";
-                    cout << "Nama       : " << (*hasil).nama << endl;
-                    cout << "NIM        : " << (*hasil).nim << endl;
-                    cout << "Billing Jam: " << (*hasil).billing.jam << endl;
-                    cout << "Masa Aktif : " << (*hasil).billing.masaAktif << " hari" << endl;
-                } else {
-                    cout << "User tidak ditemukan!\n";
-                }
-                break;
-            }
-
-            case 5:
+            case 4:
                 break;
 
             default:
                 cout << "Pilihan tidak valid\n";
         }
-    } while (menuUser != 5);
+    } while (menuUser != 4);
 }
 
 int main() {
