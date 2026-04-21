@@ -5,9 +5,10 @@
 using namespace std;
 
 #define MAX_USER 100
+#define HARGA 5000
 
 struct Billing{
-    int jam;
+    double jam;
     int masaAktif;
 };
 
