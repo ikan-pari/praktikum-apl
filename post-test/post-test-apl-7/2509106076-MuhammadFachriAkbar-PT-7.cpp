@@ -40,9 +40,7 @@ bool cekNama(User* daftarUser, int jumlahUser, string namaBaru) {
 }
 
 void registerUser(User* daftarUser, int& jumlahUser) {
-    if (jumlahUser >= MAX_USER) {
-        throw overflow_error("Kapasitas user sudah penuh!");
-    }
+    if (jumlahUser >= MAX_USER) throw overflow_error("Kapasitas penuh!");
 
     string namaBaru;
     cout << "\n===== REGISTER =====\n";
@@ -57,88 +55,155 @@ void registerUser(User* daftarUser, int& jumlahUser) {
     daftarUser[jumlahUser].nama = namaBaru;
     cout << "Masukkan NIM : ";
     cin >> daftarUser[jumlahUser].nim;
-    daftarUser[jumlahUser].billing.jam = 0;
-    daftarUser[jumlahUser].billing.masaAktif = 0;
+    daftarUser[jumlahUser].billing = {0, 0};
     jumlahUser++;
-
     cout << "Register Berhasil!\n";
+}
+
+bool login(User* daftarUser, int jumlahUser, bool& admin, int& userIndex) {
+    string namaInput, nimInput;
+    int percobaan = 0;
+
+    while (percobaan < 3) {
+        cout << "\n===== LOGIN =====\n";
+        cin.ignore(numeric_limits<streamsize>::max(), '\n');
+        cout << "Masukkan Nama : "; getline(cin, namaInput);
+        cout << "Masukkan NIM : "; cin >> nimInput;
+
+        if (namaInput == "Admin" && nimInput == "076") {
+            admin = true; return true;
+        }
+
+        for (int i = 0; i < jumlahUser; i++) {
+            if (namaInput == daftarUser[i].nama && nimInput == daftarUser[i].nim) {
+                admin = false; userIndex = i; return true;
+            }
+        }
+        percobaan++;
+        cout << "Login gagal!\n";
+    }
+    throw runtime_error("Kesempatan login habis.");
+}
+
+void tampilkanMember(User* daftarUser, int jumlahUser) {
+    if (jumlahUser == 0) {
+        cout << "Belum ada member\n";
+    } else {
+        cout << "\n===== DATA MEMBER =====\n";
+        cout << left << setw(5) << "No" << setw(25) << "Nama" << setw(15) << "NIM" 
+             << setw(10) << "Jam" << setw(15) << "Masa Aktif" << endl;
+        for (int i = 0; i < jumlahUser; i++) {
+            cout << setw(5) << i + 1 << setw(25) << daftarUser[i].nama << setw(15) << daftarUser[i].nim 
+                 << setw(10) << daftarUser[i].billing.jam << setw(10) << daftarUser[i].billing.masaAktif << " hari" << endl;
+        }
+    }
+}
+
+void updateIdentitas(User* daftarUser, int jumlahUser) {
+    int index;
+    cout << "Pilih nomor member : "; cin >> index;
+    validasiInput();
+    if (index > 0 && index <= jumlahUser) {
+        cin.ignore(numeric_limits<streamsize>::max(), '\n');
+        cout << "Nama baru : "; getline(cin, daftarUser[index-1].nama);
+        cout << "NIM baru : "; cin >> daftarUser[index-1].nim;
+        cout << "Data Member berhasil diubah\n";
+    } else throw out_of_range("Nomor tidak valid");
+}
+
+void hapusMember(User* daftarUser, int& jumlahUser) {
+    int index;
+    cout << "Pilih nomor member : "; cin >> index;
+    validasiInput();
+    if (index > 0 && index <= jumlahUser) {
+        for (int i = index - 1; i < jumlahUser - 1; i++) daftarUser[i] = daftarUser[i + 1];
+        jumlahUser--;
+        cout << "Member berhasil dihapus\n";
+    } else throw out_of_range("Nomor tidak valid");
 }
 
 void sortByNim(User* daftarUser, int jumlahUser) {
     for (int i = 0; i < jumlahUser - 1; i++) {
         int minIdx = i;
         for (int j = i + 1; j < jumlahUser; j++) {
-            if (daftarUser[j].nim < daftarUser[minIdx].nim)
-                minIdx = j;
+            if (daftarUser[j].nim < daftarUser[minIdx].nim) minIdx = j;
         }
-        if (minIdx != i)
-            swap(daftarUser[i], daftarUser[minIdx]);
+        swap(daftarUser[i], daftarUser[minIdx]);
     }
 }
 
 void menuCariNim(User* daftarUser, int jumlahUser) {
-    if (jumlahUser == 0) throw runtime_error("Data member masih kosong!");
-
-    User tempDaftar[MAX_USER];
-    for(int i = 0; i < jumlahUser; i++) tempDaftar[i] = daftarUser[i];
-
-    sortByNim(tempDaftar, jumlahUser);
-
-    string targetNim;
-    cout << "\n===== CARI NIM (Binary Search) =====\n";
-    cout << "Masukkan NIM : ";
-    cin >> targetNim;
-
+    if (jumlahUser == 0) throw runtime_error("Belum ada data!");
+    User temp[MAX_USER];
+    for(int i=0; i<jumlahUser; i++) temp[i] = daftarUser[i];
+    sortByNim(temp, jumlahUser);
+    
+    string target;
+    cout << "Masukkan NIM : "; cin >> target;
     int low = 0, high = jumlahUser - 1;
-    User* hasil = nullptr;
-
     while (low <= high) {
         int mid = low + (high - low) / 2;
-        if (tempDaftar[mid].nim == targetNim) {
-            hasil = &tempDaftar[mid];
-            break;
+        if (temp[mid].nim == target) {
+            cout << "Ditemukan: " << temp[mid].nama << endl;
+            return;
         }
-        else if (tempDaftar[mid].nim < targetNim) low = mid + 1;
+        if (temp[mid].nim < target) low = mid + 1;
         else high = mid - 1;
     }
+    cout << "Tidak ditemukan\n";
+}
 
-    if (hasil != nullptr) {
-        cout << "Member Ditemukan: " << hasil->nama << " (NIM: " << hasil->nim << ")\n";
-    } else {
-        cout << "NIM tidak ditemukan.\n";
-    }
+void menuAdmin(User* daftarUser, int& jumlahUser) {
+    int pil;
+    do {
+        try {
+            cout << "\n===== MENU ADMIN =====\n1. Tambah\n2. Lihat\n3. Update\n4. Hapus\n5. Cari NIM\n6. Logout\nPilihan : ";
+            cin >> pil; validasiInput();
+            switch (pil) {
+                case 1: registerUser(daftarUser, jumlahUser); break;
+                case 2: tampilkanMember(daftarUser, jumlahUser); break;
+                case 3: updateIdentitas(daftarUser, jumlahUser); break;
+                case 4: hapusMember(daftarUser, jumlahUser); break;
+                case 5: menuCariNim(daftarUser, jumlahUser); break;
+                case 6: break;
+                default: throw out_of_range("Pilihan salah");
+            }
+        } catch (const exception& e) { cout << "Error: " << e.what() << endl; }
+    } while (pil != 6);
+}
+
+void menuUser(User* daftarUser, int index) {
+    int pil;
+    do {
+        try {
+            cout << "\n===== MENU USER =====\n1. Profil\n2. Logout\nPilihan : ";
+            cin >> pil; validasiInput();
+            if(pil == 1) cout << "Nama: " << daftarUser[index].nama << "\nNIM: " << daftarUser[index].nim << endl;
+        } catch (const exception& e) { cout << "Error: " << e.what() << endl; }
+    } while (pil != 2);
 }
 
 int main() {
     int menuAwal;
     do {
         try {
-            cout << "\n===== MENU AWAL =====\n";
-            cout << "1. Register\n";
-            cout << "2. Cari NIM (Binary Search)\n";
-            cout << "3. Keluar\n";
-            cout << "Pilihan : ";
+            cout << "\n===== MENU AWAL =====\n1. Register\n2. Login\n3. Keluar\nPilihan : ";
             cin >> menuAwal;
             validasiInput();
-
             switch (menuAwal) {
-                case 1: 
-                    registerUser(daftarUser, jumlahUser); 
+                case 1: registerUser(daftarUser, jumlahUser); break;
+                case 2: {
+                    bool admin = false; int idx = -1;
+                    if (login(daftarUser, jumlahUser, admin, idx)) {
+                        if (admin) menuAdmin(daftarUser, jumlahUser);
+                        else menuUser(daftarUser, idx);
+                    }
                     break;
-                case 2: 
-                    menuCariNim(daftarUser, jumlahUser); 
-                    break;
-                case 3: 
-                    break;
-                default: 
-                    throw out_of_range("Pilihan tidak tersedia!");
+                }
+                case 3: break;
+                default: throw out_of_range("Pilihan salah");
             }
-        } 
-        catch (const exception& e) {
-            cout << "\n[!] ERROR: " << e.what() << endl;
-        }
+        } catch (const exception& e) { cout << "\n[!] ERROR: " << e.what() << endl; }
     } while (menuAwal != 3);
-
-    cout << "Terimakasih Sudah Menggunakan Program!\n";
     return 0;
 }
